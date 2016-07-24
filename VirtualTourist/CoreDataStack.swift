@@ -21,6 +21,12 @@ struct CoreDataStack {
     private let backgroundContext : NSManagedObjectContext
     let context : NSManagedObjectContext
     
+    class func sharedInstance() -> FlickrClient {
+        struct Singleton {
+            static var sharedInstance = FlickrClient()
+        }
+        return Singleton.sharedInstance
+    }
     
     // MARK:  - Initializers
     init?(modelName: String){
@@ -126,6 +132,7 @@ extension CoreDataStack{
         }
     }
 }
+
 // MARK:  - Save
 extension CoreDataStack {
     

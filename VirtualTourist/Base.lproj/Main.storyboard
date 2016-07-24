@@ -30,9 +30,14 @@
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="Zrq-MP-EUO">
-                        <barButtonItem key="rightBarButtonItem" systemItem="edit" id="cHB-Kz-a1Z"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="edit" id="cHB-Kz-a1Z">
+                            <connections>
+                                <action selector="deletePin:" destination="BYZ-38-t0r" id="QR7-lY-Ltx"/>
+                            </connections>
+                        </barButtonItem>
                     </navigationItem>
                     <connections>
+                        <outlet property="editButton" destination="cHB-Kz-a1Z" id="0Gy-Nw-4JO"/>
                         <outlet property="mapView" destination="SGX-yn-y3o" id="T29-Ab-vR5"/>
                     </connections>
                 </viewController>
@@ -43,7 +48,7 @@
         <!--Collection View Controller-->
         <scene sceneID="Sp9-2H-uMd">
             <objects>
-                <viewController id="nSa-70-6j2" customClass="CollectionViewController" customModule="VirtualTourist" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="collectionVC" id="nSa-70-6j2" customClass="CollectionViewController" customModule="VirtualTourist" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="ipp-zl-ohn"/>
                         <viewControllerLayoutGuide type="bottom" id="KCt-Cs-nbp"/>
