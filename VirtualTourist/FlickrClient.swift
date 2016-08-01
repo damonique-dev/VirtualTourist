@@ -22,7 +22,7 @@ class FlickrClient {
     }
     
     //Get photos from lat/long
-    func getLocationPhotos(lat: Float, lng: Float, completionHandler: (photos: [String]?, success: Bool, error: String?) -> Void) {
+    func getLocationPhotos(lat: Float, lng: Float, completionHandler: (page: Int?, success: Bool, error: String?) -> Void) {
         
         let session = NSURLSession.sharedSession()
         parameters[ParameterKeys.Lat] = "\(lat)"
@@ -33,7 +33,7 @@ class FlickrClient {
             
             func sendError(error: String) {
                 print(error)
-                completionHandler(photos: nil, success: false, error: error)
+                completionHandler(page:nil, success: false, error: error)
             }
             
             guard (error == nil) else {
@@ -72,14 +72,13 @@ class FlickrClient {
             let pageLimit = min(totalPages, 40)
             let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
 
-            self.getPagePhotos(lat, lng: lng, page: randomPage, completionHandler: completionHandler)
+            completionHandler(page: randomPage ,success: true, error: nil)
         }
         
         task.resume()
     }
     
-    private func getPagePhotos(lat: Float, lng: Float, page: Int, completionHandler: (photos: [String]?, success: Bool, error: String?) -> Void) {
-        
+    func getPagePhotos(lat: Float, lng: Float, page: Int, completionHandler: (photos: [String]?, success: Bool, error: String?) -> Void) {
         let session = NSURLSession.sharedSession()
         parameters[ParameterKeys.Lat] = "\(lat)"
         parameters[ParameterKeys.Lng] = "\(lng)"
@@ -107,7 +106,7 @@ class FlickrClient {
                 sendError("No data was returned by the request!")
                 return
             }
-            
+
             let parsedResult: AnyObject!
             do {
                 parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
@@ -117,21 +116,39 @@ class FlickrClient {
             }
             
             guard let photosDictionary = parsedResult[ResponseKeys.Photos] as? [String:AnyObject] else {
-                sendError("Cannot find keys '\(ResponseKeys.Photos)' in \(parsedResult)")
+                sendError("Cannot find keys '\(ResponseKeys.Photos)'")
                 return
             }
             
-            guard let total = photosDictionary[ResponseKeys.Total] as? Int else {
-                sendError("Cannot find key '\(ResponseKeys.Total)' in \(photosDictionary)")
+            guard let total = photosDictionary[ResponseKeys.Total] as? String else {
+                sendError("Cannot find key '\(ResponseKeys.Total)'")
                 return
             }
             
-            guard let photo = photosDictionary[ResponseKeys.Photo] as? [[String:AnyObject]] else {
-                sendError("Cannot find key '\(ResponseKeys.Photo)' in \(photosDictionary)")
+            guard let photos = photosDictionary[ResponseKeys.Photo] as? [[String:AnyObject]] else {
+                sendError("Cannot find key '\(ResponseKeys.Photo)'")
                 return
             }
-            let photUrl = self.getRandomPhotos(total, photos: photo)
-            completionHandler(photos: photUrl, success: true, error: nil)
+            
+            //get 12 random pictures
+            var chosen = [Int]()
+            var randomPhotos = [String]()
+            let perPage = min(Int(total)!, 100)
+            let numberOfPhotos = min(Int(total)!, 12)
+            if numberOfPhotos > 0 {
+                for _ in 0...numberOfPhotos-1 {
+                    var random = Int(arc4random_uniform(UInt32(perPage)))
+                    while chosen.contains(random) {
+                        random = Int(arc4random_uniform(UInt32(perPage)))
+                    }
+                    chosen.append(random)
+                    let photo = photos[random] as [String:AnyObject]
+                    if let photoUrl = photo[ResponseKeys.MediumURL] as? String {
+                        randomPhotos.append(photoUrl)
+                    }
+                }
+            }
+            completionHandler(photos: randomPhotos, success: true, error: nil)
         }
         
         task.resume()
@@ -146,24 +163,6 @@ class FlickrClient {
         else {
             completionHandler(imageData: nil, success: false)
         }
-    }
-    
-    private func getRandomPhotos (total: Int, photos: [[String:AnyObject]]) -> [String]{
-        var chosen = [Int]()
-        var randomPhotos = [String]()
-        let perPage = min(total, 100)
-        for _ in 0...12 {
-            var random = Int(arc4random_uniform(UInt32(perPage)))
-            while !chosen.contains(random) {
-                random = Int(arc4random_uniform(UInt32(perPage)))
-            }
-            chosen.append(random)
-            let photo = photos[random] as [String:AnyObject]
-            if let photoUrl = photo[ResponseKeys.MediumURL] as? String {
-                randomPhotos.append(photoUrl)
-            }
-        }
-        return randomPhotos
     }
     
     

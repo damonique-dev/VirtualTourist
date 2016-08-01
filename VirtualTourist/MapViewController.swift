@@ -14,6 +14,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
 
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var editButton: UIBarButtonItem!
+    var annotations = [MKPointAnnotation]()
     
     var pins = [Pin]()
     var editMode = false
@@ -27,18 +28,19 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     }
     
     @IBAction func deletePin(sender: UIBarButtonItem) {
-        print("here")
         deletePinHelper()
-        
     }
     
     //MARK: Helper functions
     func addPin(gestureRecognizer : UIGestureRecognizer) {
-        //add to map
         if gestureRecognizer.state == .Ended {
             let location = gestureRecognizer.locationInView(self.mapView)
             let coordinates = mapView.convertPoint(location, toCoordinateFromView: mapView)
-            annotationHelper(coordinates)
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = coordinates
+            annotation.title = "title"
+            mapView.addAnnotation(annotation)
+            
             //add to core data
             let newPin = NSEntityDescription.insertNewObjectForEntityForName("Pin", inManagedObjectContext: self.managedObjectContext) as! Pin
             newPin.lat = coordinates.latitude
@@ -70,20 +72,17 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             pins = fetchResults
             for pin in pins {
                 let coordinate = CLLocationCoordinate2D(latitude: Double(pin.lat!), longitude: Double(pin.lng!))
-                annotationHelper(coordinate)
+                let annotation = MKPointAnnotation()
+                annotation.coordinate = coordinate
+                annotation.title = "title"
+                annotations.append(annotation)
             }
+            mapView.addAnnotations(annotations)
         }
         else {
             print("error getting pins from core data")
         }
         
-    }
-    
-    private func annotationHelper(coordinate: CLLocationCoordinate2D){
-        let annotation = MKPointAnnotation()
-        annotation.coordinate = coordinate
-        annotation.title = "title"
-        mapView.addAnnotation(annotation)
     }
     
     private func getSelectedPin(annotation: MKAnnotation) -> Pin? {
@@ -104,7 +103,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
         if pinView == nil {
             pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
-            pinView!.canShowCallout = true
+            pinView!.canShowCallout = false
             pinView!.pinTintColor = UIColor.redColor()
             pinView!.animatesDrop = true
             pinView!.rightCalloutAccessoryView = UIButton(type: .DetailDisclosure)
@@ -117,10 +116,12 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     }
     
     func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
+        mapView.deselectAnnotation(view.annotation, animated: true)
         if let pin = getSelectedPin(view.annotation!) {
             if !editMode {
                 let controller = storyboard!.instantiateViewControllerWithIdentifier("collectionVC") as! CollectionViewController
                 controller.pin = pin
+                controller.coordinates = CLLocationCoordinate2D(latitude: Double(pin.lat!), longitude: Double(pin.lng!))
                 navigationController?.pushViewController(controller, animated: true)
                 mapView.deselectAnnotation(view.annotation, animated: true)
             }
