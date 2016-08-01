@@ -36,16 +36,16 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         if gestureRecognizer.state == .Ended {
             let location = gestureRecognizer.locationInView(self.mapView)
             let coordinates = mapView.convertPoint(location, toCoordinateFromView: mapView)
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = coordinates
-            annotation.title = "title"
-            mapView.addAnnotation(annotation)
             
             //add to core data
             let newPin = NSEntityDescription.insertNewObjectForEntityForName("Pin", inManagedObjectContext: self.managedObjectContext) as! Pin
             newPin.lat = coordinates.latitude
             newPin.lng = coordinates.longitude
             CoreDataManager.sharedInstance().saveContext()
+            pins.append(newPin)
+            
+            createAnnotation(newPin)
+            getFlickrPhotos(newPin)
         }
     }
     
@@ -71,13 +71,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         if let fetchResults = (try? managedObjectContext.executeFetchRequest(fetchRequest)) as? [Pin] {
             pins = fetchResults
             for pin in pins {
-                let coordinate = CLLocationCoordinate2D(latitude: Double(pin.lat!), longitude: Double(pin.lng!))
-                let annotation = MKPointAnnotation()
-                annotation.coordinate = coordinate
-                annotation.title = "title"
-                annotations.append(annotation)
+                createAnnotation(pin)
             }
-            mapView.addAnnotations(annotations)
         }
         else {
             print("error getting pins from core data")
@@ -85,14 +80,43 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
     }
     
+    private func createAnnotation(pin: Pin) {
+        let coordinate = CLLocationCoordinate2D(latitude: Double(pin.lat!), longitude: Double(pin.lng!))
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = coordinate
+        annotation.title = "title"
+        mapView.addAnnotation(annotation)
+    }
+    
     private func getSelectedPin(annotation: MKAnnotation) -> Pin? {
         for pin in pins {
             let coord = annotation.coordinate
-            if coord.latitude == pin.lat && coord.longitude == pin.lng {
+            if coord.latitude == pin.lat! && coord.longitude == pin.lng! {
                 return pin
             }
         }
         return nil
+    }
+    
+    private func getFlickrPhotos(pin: Pin) {
+        FlickrClient.sharedInstance().getLocationPhotos(Float(pin.lat!), lng: Float(pin.lng!)) { (results, success, bool) in
+            if success {
+                FlickrClient.sharedInstance().getPagePhotos(Float(pin.lat!), lng: Float(pin.lng!), page: results!) {  (results, success, bool) in
+                    if success {
+                            for url in results! {
+                                let newPhoto = NSEntityDescription.insertNewObjectForEntityForName("Photo", inManagedObjectContext: self.managedObjectContext) as! Photo
+                                newPhoto.imagePath = url
+                                newPhoto.pin = pin
+                                CoreDataManager.sharedInstance().saveContext()
+                            }
+                    } else {
+                        print("error getting photos from networking")
+                    }
+                }
+            } else {
+                print("error getting random page from networking")
+            }
+        }
     }
 
     //MARK: Map functions
@@ -126,6 +150,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
                 mapView.deselectAnnotation(view.annotation, animated: true)
             }
             else {
+                let index = pins.indexOf(pin)
+                pins.removeAtIndex(index!)
                 mapView.removeAnnotation(view.annotation!)
                 managedObjectContext.deleteObject(pin)
                 CoreDataManager.sharedInstance().saveContext()
