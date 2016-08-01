@@ -12,7 +12,6 @@ import CoreData
 
 class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
 
-    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var noPhotosLabel: UILabel!
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var newCollectionBtn: UIButton!
@@ -37,7 +36,6 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
         noPhotosLabel.hidden = true
         setUpMap()
         getPinPhotos()
-        activityIndicator.startAnimating()
     }
     
     @IBAction func getNewCollection(sender: UIButton) {
@@ -71,7 +69,6 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
                                 print(self.downloadCount)
                             }
                             self.collectionView.reloadData()
-                            self.activityIndicator.stopAnimating()
                         }
                     } else {
                         print("error getting photos from networking")
