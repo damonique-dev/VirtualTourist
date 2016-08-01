@@ -13,9 +13,11 @@ class FlickrPhotoCell: UICollectionViewCell {
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     
     func setCellImage(image:UIImage?){
-        imageView.image = image
-        if imageView.image != nil {
-            activityIndicator.stopAnimating()
+        dispatch_async(dispatch_get_main_queue()) {
+            self.imageView.image = image
+            if self.imageView.image != nil {
+                self.activityIndicator.stopAnimating()
+            }
         }
     }
 }

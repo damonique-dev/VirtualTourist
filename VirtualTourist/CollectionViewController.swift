@@ -63,16 +63,14 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
                         }
                         else {
                             for url in results! {
-                                dispatch_async(dispatch_get_main_queue()) {
                                 let newPhoto = NSEntityDescription.insertNewObjectForEntityForName("Photo", inManagedObjectContext: self.managedObjectContext) as! Photo
                                 newPhoto.imagePath = url
                                 newPhoto.pin = self.pin
-                                CoreDataManager.sharedInstance().saveContext()
                                 self.photos.append(newPhoto)
                                 self.downloadCount+=1
                                 print(self.downloadCount)
-                                }
                             }
+                            CoreDataManager.sharedInstance().saveContext()
                             self.collectionView.reloadData()
                         }
                     } else {
@@ -117,21 +115,18 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
 
     func configureCell(cell: FlickrPhotoCell, photo: Photo){
         let tempImage = UIImage(named:"Temp Image")
-        cell.setCellImage(nil)
+            cell.setCellImage(nil)
         if let imageData = photo.imageData {
             cell.setCellImage(UIImage(data: imageData))
         } else {
-            cell.setCellImage(tempImage)
+                cell.setCellImage(tempImage)
                 FlickrClient.sharedInstance().getPhoto(photo.imagePath!) { (data, success) in
                     if success {
-                        dispatch_async(dispatch_get_main_queue()) {
                         cell.setCellImage(UIImage(data: data!))
                         photo.imageData = data
                         CoreDataManager.sharedInstance().saveContext()
                         self.downloadCount-=1
                         print(self.downloadCount)
-                        }
-
                     } else {
                         print("Error getting image data")
                     }
@@ -167,9 +162,7 @@ class CollectionViewController: UIViewController, MKMapViewDelegate, UICollectio
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("picCell", forIndexPath: indexPath) as! FlickrPhotoCell
         let photo = photos[indexPath.item]
-        dispatch_async(dispatch_get_main_queue()) {
-            self.configureCell(cell, photo: photo)
-        }
+        self.configureCell(cell, photo: photo)
         if downloadCount <= 0 {
             newCollectionBtn.enabled = true
         }
