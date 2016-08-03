@@ -103,12 +103,12 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             if success {
                 FlickrClient.sharedInstance().getPagePhotos(Float(pin.lat!), lng: Float(pin.lng!), page: results!) {  (results, success, bool) in
                     if success {
-                        for url in results! {
-                            let newPhoto = NSEntityDescription.insertNewObjectForEntityForName("Photo", inManagedObjectContext: self.managedObjectContext) as! Photo
-                            newPhoto.imagePath = url
-                            newPhoto.pin = pin
-                        }
-                        CoreDataManager.sharedInstance().saveContext()
+                            for url in results! {
+                                let newPhoto = NSEntityDescription.insertNewObjectForEntityForName("Photo", inManagedObjectContext: self.managedObjectContext) as! Photo
+                                newPhoto.imagePath = url
+                                newPhoto.pin = pin
+                            }
+                            CoreDataManager.sharedInstance().saveContext()
                     } else {
                         print("error getting photos from networking")
                     }
